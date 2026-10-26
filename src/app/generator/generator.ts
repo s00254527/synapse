@@ -38,8 +38,21 @@ export class Generator implements AfterViewInit, OnDestroy{
       this.provider.awareness.setLocalStateField('user',{
         name:'User' + Math.floor(Math.random()*100),
          color: '#30bced',
-        colorLight: '#30bced33',
+        colorLight: '#30bced33',        
       });
+      
+      this.provider.on('status', (e: { status: string }) => {
+        console.log('WS status:', e.status);
+      });
+
+      this.provider.on('sync', (isSynced: boolean) => {
+        console.log('Synced with server:', isSynced);
+      });
+
+      this.provider.awareness.on('change', () => {
+        console.log('Users online:', this.provider!.awareness.getStates().size);
+      });
+
 
       const state = EditorState.create({
         doc:ytext.toString(),

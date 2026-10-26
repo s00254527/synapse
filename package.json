@@ -2,12 +2,13 @@
   "name": "synapse",
   "version": "0.0.0",
   "scripts": {
-    "ng": "ng",
-    "start": "ng serve",
-    "build": "ng build",
-    "watch": "ng build --watch --configuration development",
-    "test": "ng test"
-  },
+  "ng": "ng",
+  "start": "concurrently -n WS,NG -c blue,green \"npm:server\" \"ng serve\"",
+  "server":"cross-env HOST=localhost PORT=1234 y-websocket",
+  "build": "ng build",
+  "watch": "ng build --watch --configuration development",
+  "test": "ng test"
+},
   "private": true,
   "packageManager": "npm@11.12.0",
   "dependencies": {
@@ -25,13 +26,15 @@
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "y-codemirror.next": "^0.3.6",
-    "y-websocket": "^3.1.0",
+    "y-websocket": "^2.1.0",
     "yjs": "^13.6.33"
   },
   "devDependencies": {
     "@angular/build": "~21.2.0",
     "@angular/cli": "^21.2.5",
     "@angular/compiler-cli": "^21.2.0",
+    "concurrently": "^10.0.6",
+    "cross-env": "^10.1.0",
     "jsdom": "^28.0.0",
     "prettier": "^3.8.1",
     "typescript": "~5.9.2",

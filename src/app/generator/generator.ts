@@ -4,7 +4,7 @@ import {WebsocketProvider} from 'y-websocket';
 import {yCollab} from 'y-codemirror.next';
 import {EditorState} from '@codemirror/state';
 import { EditorView,keymap,lineNumbers } from '@codemirror/view';
-import {defaultKeymap} from '@codemirror/commands';
+import {defaultKeymap, indentWithTab} from '@codemirror/commands';
 import {javascript} from '@codemirror/lang-javascript';
 // ^ this above was for the basic text editor and the impoorts to make 
 //code mirrior and Yjs work together. Now im adding the markdown. 
@@ -100,6 +100,7 @@ export class Generator implements AfterViewInit, OnDestroy{
           keymap.of(defaultKeymap),
           javascript(),
           yCollab(ytext, this.provider.awareness),
+
           //now adding in the text editor extensions bar keymap and the 
           //line numbers
           drawSelection(),
@@ -109,12 +110,22 @@ export class Generator implements AfterViewInit, OnDestroy{
           EditorView.lineWrapping,
           placeholder('start new note...'),
 
+          //Other code mirror features to go here.... 
+          
+
           //this section replaceds javascript
           markdown({base: markdownLanguage}),
           syntaxHighlighting(markDownStyle),
 
           //implementing the undo redo, was shown it had problems. 
-
+          keymap.of([
+            ...yUndoManagerKeymap,
+            indentWithTab,//these are must have obsidain features
+            {key:'Mod-b', run:wrapSelection('**')},
+            {key:'Mod-i', run:wrapSelection('*')},
+          ]),
+            //making the collab aware of all of this. 
+            yCollab(ytext, this.provider.awareness),
         ],
       });
       //making this view the parent state on this pc, we will have to change this in 

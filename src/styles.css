@@ -1,1 +1,6 @@
 
+:host ::ng-deep .cm-bullet {
+  display: inline-block;
+  width: 1.2em;
+  color: #888;
+}

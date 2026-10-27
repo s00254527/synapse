@@ -80,8 +80,80 @@ const bulletMark = Decoration.replace({widget: new BulletWidget()});
 
 function buildDecorations(view:EditorView):DecorationSet{
   const {state} = view;
-  const builder = new RangeSetBuilder<Decoration
+  const builder = new RangeSetBuilder<Decoration>();
+
+// Trying to create "raw" lines. 
+const activeLines = new Set<number>();
+for(const range of state.selection.ranges){
+  const first = state.doc.lineAt(range.from).number;
+  const last = state.doc.lineAt(range.to).number;
+  for(let n = first; n<= last; n++){
+    activeLines.add(n);
+  }
+
+  for (const {from, to} of view.visibleRanges){
+    syntaxTree(state).iterate({
+      from,
+      to,
+      enter:(node) =>{
+        //so its none of the active lines or no active list marks then ignore it 
+        const isListMark = node.name === 'ListMark';
+        if(!isListMark && !HIDDEN_MARKS.has(node.name))
+           return;
+
+        //if the coursor is on the line leave the text visable.
+        if(activeLines.has(state.doc.lineAt(node.from).number)) 
+          return;
+
+        //if only hide backticks not fenced code block fences
+        if(node.name === 'CodeMark' && node.node.parent?.name != 'InlineCode')
+          return;
+        
+        if (isListMark) {
+          // Only bullet lists, not "1." numbered ones
+          if (node.node.parent?.parent?.name !== 'BulletList') return;
+          builder.add(node.from, node.to, bulletMark);
+          return;
+        }
+        // Also swallow the space after # and > so headings align properly
+        let end = node.to;
+        if (
+          (node.name === 'HeaderMark' || node.name === 'QuoteMark') &&
+          state.doc.sliceString(end, end + 1) === ' '
+        ) {
+          end += 1;
+        }
+         builder.add(node.from, end, hideMark);
+      },
+    });
+  }
 }
+  return builder.finish();
+}
+
+export const livePreview = ViewPlugin.fromClass(
+  class {
+    decorations: DecorationSet;
+
+    constructor(view: EditorView) {
+      this.decorations = buildDecorations(view);
+    }
+
+    update(update: ViewUpdate) {
+      if (
+        update.docChanged ||
+        update.selectionSet ||
+        update.viewportChanged ||
+        syntaxTree(update.startState) !== syntaxTree(update.state)
+      ) {
+        this.decorations = buildDecorations(update.view);
+      }
+    }
+  },
+  { decorations: (plugin) => plugin.decorations },
+);
+
+
 
 @Component({
   selector: 'app-generator',
@@ -151,7 +223,7 @@ export class Generator implements AfterViewInit, OnDestroy{
           //this section replaceds javascript
           markdown({base: markdownLanguage}),
           syntaxHighlighting(markDownStyle),
-
+          livePreview,
           //implementing the undo redo, was shown it had problems. 
           keymap.of([
            

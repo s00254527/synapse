@@ -5,11 +5,10 @@ import {yCollab} from 'y-codemirror.next';
 import {EditorState} from '@codemirror/state';
 import { EditorView,keymap,lineNumbers } from '@codemirror/view';
 import {defaultKeymap, indentWithTab} from '@codemirror/commands';
-import {javascript} from '@codemirror/lang-javascript';
 // ^ this above was for the basic text editor and the impoorts to make 
 //code mirrior and Yjs work together. Now im adding the markdown. 
 import {markdown,markdownLanguage} from '@codemirror/lang-markdown';
-import { HighlightStyle, syntaxHighlighting,indentOnInput,bracketMatching } from '@codemirror/language';
+import { HighlightStyle, syntaxHighlighting,indentOnInput,bracketMatching, ensureSyntaxTree } from '@codemirror/language';
 import { tags as t } from '@lezer/highlight';
 import { EditorSelection } from '@codemirror/state';
 import { drawSelection,highlightActiveLine,placeholder } from '@codemirror/view';
@@ -29,15 +28,14 @@ import { Decoration, DecorationSet,ViewPlugin,ViewUpdate,WidgetType } from '@cod
 
 //now i have to define the styling.
 const markDownStyle = HighlightStyle.define([
-  {tag: t.heading1, fontSize:'2em',fontWeight:'bold'},
-  {tag: t.heading2, fontSize:'1.6em',fontWeight:'bold'},
-  {tag: t.heading3, fontSize:'1.3em',fontWeight:'bold'},
-  {tag: t.strong,fontWeight:'bold'},
-  {tag: t.emphasis,fontWeight:'italic'},
-  {tag: t.strikethrough,fontWeight:'line-through'},
-  {tag: t.link,fontWeight:'underline'},
-  {tag: t.monospace,fontWeight:'monospace'},
-
+  { tag: t.heading1, fontSize: '2em',   fontWeight: 'bold' },
+  { tag: t.heading2, fontSize: '1.6em', fontWeight: 'bold' },
+  { tag: t.heading3, fontSize: '1.3em', fontWeight: 'bold' },
+  { tag: t.strong,        fontWeight: 'bold' },
+  { tag: t.emphasis,      fontStyle: 'italic' },
+  { tag: t.strikethrough, textDecoration: 'line-through' },
+  { tag: t.link,          textDecoration: 'underline' },
+  { tag: t.monospace,     fontFamily: 'monospace' },
 ]);
 
 //creating the content markers like # for heading.
@@ -82,6 +80,10 @@ function buildDecorations(view:EditorView):DecorationSet{
   const {state} = view;
   const builder = new RangeSetBuilder<Decoration>();
 
+//this is for the ensurance for the syntax tree. 
+const tree = ensureSyntaxTree(state,view.viewport.to,50)?? syntaxTree(state);
+
+
 // Trying to create "raw" lines. 
 const activeLines = new Set<number>();
 for(const range of state.selection.ranges){
@@ -90,9 +92,9 @@ for(const range of state.selection.ranges){
   for(let n = first; n<= last; n++){
     activeLines.add(n);
   }
-
+}
   for (const {from, to} of view.visibleRanges){
-    syntaxTree(state).iterate({
+    tree.iterate({
       from,
       to,
       enter:(node) =>{
@@ -126,7 +128,6 @@ for(const range of state.selection.ranges){
          builder.add(node.from, end, hideMark);
       },
     });
-  }
 }
   return builder.finish();
 }
@@ -150,7 +151,7 @@ export const livePreview = ViewPlugin.fromClass(
       }
     }
   },
-  { decorations: (plugin) => plugin.decorations },
+  {decorations:(Plugin) => Plugin.decorations},
 );
 
 

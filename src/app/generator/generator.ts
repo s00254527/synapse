@@ -97,10 +97,6 @@ export class Generator implements AfterViewInit, OnDestroy{
         doc:ytext.toString(),
         extensions:[
           lineNumbers(),
-          keymap.of(defaultKeymap),
-          javascript(),
-          yCollab(ytext, this.provider.awareness),
-
           //now adding in the text editor extensions bar keymap and the 
           //line numbers
           drawSelection(),
@@ -119,10 +115,13 @@ export class Generator implements AfterViewInit, OnDestroy{
 
           //implementing the undo redo, was shown it had problems. 
           keymap.of([
-            ...yUndoManagerKeymap,
-            indentWithTab,//these are must have obsidain features
+           
             {key:'Mod-b', run:wrapSelection('**')},
             {key:'Mod-i', run:wrapSelection('*')},
+             //these are must have obsidain features
+            ...yUndoManagerKeymap,
+            indentWithTab,
+            ...defaultKeymap,
           ]),
             //making the collab aware of all of this. 
             yCollab(ytext, this.provider.awareness),

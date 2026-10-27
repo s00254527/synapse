@@ -15,6 +15,18 @@ import { EditorSelection } from '@codemirror/state';
 import { drawSelection,highlightActiveLine,placeholder } from '@codemirror/view';
 import { yUndoManagerKeymap } from 'y-codemirror.next';
 
+//here are some more features im throwing into this. 
+import{searchKeymap} from '@codemirror/search';
+import {autocompletion,closeBrackets } from '@codemirror/autocomplete';
+import { foldKeymap } from '@codemirror/language';
+
+
+///importing these so I can hide the # or the * when the user implements them. 
+import { syntaxTree } from '@codemirror/language';
+import { RangeSetBuilder } from '@codemirror/state';
+import { Decoration, DecorationSet,ViewPlugin,ViewUpdate,WidgetType } from '@codemirror/view';
+
+
 //now i have to define the styling.
 const markDownStyle = HighlightStyle.define([
   {tag: t.heading1, fontSize:'2em',fontWeight:'bold'},
@@ -43,6 +55,33 @@ const wrapSelection = (mark:string) => (view:EditorView):boolean =>{
 
   return true;
 };
+
+
+//hiding these marks, based off of the imputs and everything elese
+const HIDDEN_MARKS = new Set([
+  'HeaderMark', // #
+  'EmphasisMark', // *
+  'StrikethroughMark', // ~
+  'QuoteMark', // >
+  'CodeMark', // `
+]);
+
+class BulletWidget extends WidgetType {
+  toDOM() {
+    const span = document.createElement('span');
+    span.className = 'cm-bullet';
+    span.textContent = '•';
+    return span;
+  }
+  override eq() { return true; }
+}
+const hideMark = Decoration.replace({});
+const bulletMark = Decoration.replace({widget: new BulletWidget()});
+
+function buildDecorations(view:EditorView):DecorationSet{
+  const {state} = view;
+  const builder = new RangeSetBuilder<Decoration
+}
 
 @Component({
   selector: 'app-generator',

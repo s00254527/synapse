@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, NgZone,OnDestroy,ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, model, NgZone,OnDestroy,ViewChild } from '@angular/core';
 import * as Y from 'yjs';
 import {WebsocketProvider} from 'y-websocket';
 import {yCollab} from 'y-codemirror.next';
@@ -57,6 +57,7 @@ export class Generator implements AfterViewInit, OnDestroy{
       const state = EditorState.create({
         doc:ytext.toString(),
         extensions:[
+          
           lineNumbers(),
           keymap.of(defaultKeymap),
           javascript(),

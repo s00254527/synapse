@@ -34,7 +34,7 @@
   },
   "devDependencies": {
     "@angular/build": "~21.2.0",
-    "@angular/cli": "^21.2.5",
+    "@angular/cli": "^17.3.17",
     "@angular/compiler-cli": "^21.2.0",
     "concurrently": "^10.0.6",
     "cross-env": "^10.1.0",

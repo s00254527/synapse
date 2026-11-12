@@ -2,7 +2,7 @@ import { AfterViewInit, Component, ElementRef, model, NgZone,OnDestroy,ViewChild
 import * as Y from 'yjs';
 import {WebsocketProvider} from 'y-websocket';
 import {yCollab} from 'y-codemirror.next';
-import {EditorState} from '@codemirror/state';
+import {EditorState, RangeSetBuilder} from '@codemirror/state';
 import { EditorView,keymap,lineNumbers } from '@codemirror/view';
 import {defaultKeymap, indentWithTab} from '@codemirror/commands';
 // ^ this above was for the basic text editor and the impoorts to make 
@@ -11,19 +11,14 @@ import {markdown,markdownLanguage} from '@codemirror/lang-markdown';
 import { HighlightStyle, syntaxHighlighting,indentOnInput,bracketMatching, ensureSyntaxTree } from '@codemirror/language';
 import { tags as t } from '@lezer/highlight';
 import { EditorSelection } from '@codemirror/state';
-import { drawSelection,highlightActiveLine,placeholder } from '@codemirror/view';
+import { drawSelection,highlightActiveLine,placeholder,Decoration, DecorationSet,ViewPlugin,ViewUpdate,WidgetType } from '@codemirror/view';
 import { yUndoManagerKeymap } from 'y-codemirror.next';
 
 //here are some more features im throwing into this. 
 import{searchKeymap} from '@codemirror/search';
 import {autocompletion,closeBrackets } from '@codemirror/autocomplete';
-import { foldKeymap } from '@codemirror/language';
+import { foldKeymap,syntaxTree } from '@codemirror/language';
 
-
-///importing these so I can hide the # or the * when the user implements them. 
-import { syntaxTree } from '@codemirror/language';
-import { RangeSetBuilder } from '@codemirror/state';
-import { Decoration, DecorationSet,ViewPlugin,ViewUpdate,WidgetType } from '@codemirror/view';
 
 
 //now i have to define the styling.
@@ -84,7 +79,7 @@ function buildDecorations(view:EditorView):DecorationSet{
 const tree = ensureSyntaxTree(state,view.viewport.to,50)?? syntaxTree(state);
 
 
-// Trying to create "raw" lines. 
+// Trying to create "raw" lines so the user can see the text they are typing, but not the markdown symbols.
 const activeLines = new Set<number>();
 for(const range of state.selection.ranges){
   const first = state.doc.lineAt(range.from).number;
@@ -131,7 +126,7 @@ for(const range of state.selection.ranges){
 }
   return builder.finish();
 }
-
+//these are the live updates that happen when the user is typing and changing the text.
 export const livePreview = ViewPlugin.fromClass(
   class {
     decorations: DecorationSet;

@@ -1,6 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { Generator } from './generator/generator';
+import { Generator } from './generator/note-component';
 
 @Component({
   selector: 'app-root',

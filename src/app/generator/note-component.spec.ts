@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { Generator } from './generator';
+import { Generator } from './note-component';
 
 describe('Generator', () => {
   let component: Generator;

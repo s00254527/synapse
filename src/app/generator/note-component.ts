@@ -154,8 +154,8 @@ export const livePreview = ViewPlugin.fromClass(
 @Component({
   selector: 'app-generator',
   standalone:true,
-  templateUrl: './generator.html',
-  styleUrl: './generator.css',
+  templateUrl: './note-component.html',
+  styleUrl: './note-component.css',
 })
 export class Generator implements AfterViewInit, OnDestroy{
   @ViewChild('host',{static:true}) host!:ElementRef<HTMLDivElement>;

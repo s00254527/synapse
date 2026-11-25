@@ -21,7 +21,9 @@ import { foldKeymap,syntaxTree } from '@codemirror/language';
 
 
 //here are some more imports for melicinious items 
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { NoteServiceService } from '../services/note-service.service';
 
 
 // [[Note]] or [[Note|alias]]
@@ -262,42 +264,65 @@ export class Generator implements AfterViewInit, OnDestroy{
   private ydoc = new Y.Doc();
   private provider?:WebsocketProvider;
   private view?:EditorView;
+  //to see if nay of the notes have been linked before 
+  private sub?:Subscription;
   noteTitles: string[] = [];
 
 
   //constructor creating a zone. 
-  constructor(private zone:NgZone, private router:Router){}
+  //and using all of the routing and servies
+  constructor(
+    private zone:NgZone,
+     private router:Router,
+    private route:ActivatedRoute,
+    private notes:NoteServiceService 
+){}
 
 
   //this is to keep the cdmr6 and yjs out of the change detection
   //so we can edit text. 
 
   ngAfterViewInit() {
-    //this is to connect to the private websocket, didnt write this down. 
-    this.zone.runOutsideAngular(() =>{
-      this.provider = new WebsocketProvider('ws://localhost:1234', 'my-room', this.ydoc);
-      const ytext = this.ydoc.getText('codemirror');
+    this.sub = this.route.paramMap.subscribe(p => this.mount(p.get('id')!));
+  }
 
-      //this is jus to create a random user, 
+  //creating a private teardown to destroy the note when gone to the next one 
+  private teardown(){
+    this.view?.destroy();
+    this.provider?.destroy();
+    this.ydoc?.destroy();
+  }
+
+  private mount(id:string){
+    this.teardown();
+    this.zone.runOutsideAngular(() =>{
+      this.ydoc = new Y.Doc();
+      //implemeting the note id as the websocketProvider for the route
+       this.provider = new WebsocketProvider('ws://localhost:1234', `note-${id}`, this.ydoc);
+       const ytext = this.ydoc.getText('codemirror');
+
+     //this is jus to create a random user, 
       this.provider.awareness.setLocalStateField('user',{
         name:'User' + Math.floor(Math.random()*100),
          color: '#30bced',
         colorLight: '#30bced33',        
       });
+
+
       //these are for the console logs, to see if the server is running. 
       //the server being i.e. the provider. 
       this.provider.on('status', (e: { status: string }) => {
         console.log('WS status:', e.status);
       });
 
-      this.provider.on('sync', (isSynced: boolean) => {
+          this.provider.on('sync', (isSynced: boolean) => {
         console.log('Synced with server:', isSynced);
       });
 
-      this.provider.awareness.on('change', () => {
+       this.provider.awareness.on('change', () => {
         console.log('Users online:', this.provider!.awareness.getStates().size);
       });
-
+ 
       //this is creating the editor state, where we are using the extentions 
       //for line numbers and the defualt keymap. 
       const state = EditorState.create({

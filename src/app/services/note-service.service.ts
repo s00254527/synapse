@@ -21,7 +21,7 @@ readonly ready = new Promise<void>(res =>{
 });
 
   constructor() {
-    this.notes.observe(()=>this.list.set([...this.notes.values()]));
+    this.notes.observe(()=>this.list.set([...this.notes.values()].filter(n => !n.IsDeleted)));
    }
 
    //getting the note by the title 
@@ -31,5 +31,25 @@ findByTitle(title:string) :NoteModel | undefined{
   return this.list().find(n => n.Title.toLowerCase() === t);
 }
 
+
+//creating notes 
+  create(title: string): NoteModel {
+    
+    const note :NoteModel ={
+      NoteId:crypto.randomUUID(),
+      Title:title.trim(),
+      FolderId: 1,
+      UpdatedAt:new Date(),
+     
+    }
+    this.notes.set(note.NoteId, note);
+    return note;
+  }
+  //this creates a new note if there isint one linked in the notes
+
+  async openByTitle(title:string):Promise<string>{
+    await this.ready;
+    return (this.findByTitle(title)?? this.create(title)).NoteId;
+  }
 
 }

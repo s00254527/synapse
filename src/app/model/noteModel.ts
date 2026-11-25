@@ -1,5 +1,5 @@
  export interface NoteModel{
-   NoteId:bigint;
+   NoteId:string;
    VaultId:number;
    FolderId:number;
    Title:string;

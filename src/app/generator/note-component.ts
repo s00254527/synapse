@@ -77,9 +77,11 @@ class BulletWidget extends WidgetType {
   }
   override eq() { return true; }
 }
+//this is to replace the -
 const hideMark = Decoration.replace({});
-const bulletMark = Decoration.replace({widget: new BulletWidget()});
+const bulletMark = Decoration.replace({widget: new BulletWidget()});//replacing it with the ullet widget 
 
+//creating a new set of build declorations for the state view 
 function buildDecorations(view:EditorView):DecorationSet{
   const {state} = view;
   const builder = new RangeSetBuilder<Decoration>();
@@ -97,6 +99,7 @@ for(const range of state.selection.ranges){
     activeLines.add(n);
   }
 }
+//iterating through the state of visable ranges from => to
   for (const {from, to} of view.visibleRanges){
     tree.iterate({
       from,
@@ -143,7 +146,7 @@ export const livePreview = ViewPlugin.fromClass(
     constructor(view: EditorView) {
       this.decorations = buildDecorations(view);
     }
-
+    //updating the view on the syntax tree, 
     update(update: ViewUpdate) {
       if (
         update.docChanged ||
@@ -160,6 +163,7 @@ export const livePreview = ViewPlugin.fromClass(
 
 //this class is to determine the code and treating it as a link
 function inCode(state:EditorState,pos:number):boolean{
+  //resolving the code changes for certian thigns based on its position to the parent line
   for(let n:any = syntaxTree(state).resolveInner(pos,1);n; n =n.parent){
     if(n.name === 'InlineCode' || n.name === 'FencedCode' || n.name === 'CodeBlock') return true;
   }
@@ -169,7 +173,7 @@ function inCode(state:EditorState,pos:number):boolean{
 function buildWikiLinks(view:EditorView):DecorationSet{
   const {state} = view;
   const builder = new RangeSetBuilder<Decoration>();
-
+//creating another from -> to for the visable rnages for hte wikilinks 
   for(const {from,to} of view.visibleRanges){
     const text = state.doc.sliceString(from,to);
     WIKILINK.lastIndex = 0;
@@ -217,6 +221,7 @@ export const wikiLinks = (onOpen:(target:string)=> void) => [
     },
     {decorations: p => p.decorations},
   ),
+  //this is for the mousedown event that is taking place, 
   EditorView.domEventHandlers({
     mousedown(event){
       const el = (event.target as HTMLElement).closest('.cm-wikilink') as HTMLElement| null;

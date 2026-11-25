@@ -16,12 +16,13 @@ import { yUndoManagerKeymap } from 'y-codemirror.next';
 
 //here are some more features im throwing into this. 
 import{searchKeymap} from '@codemirror/search';
-import {autocompletion,closeBrackets } from '@codemirror/autocomplete';
+import {CompletionContext,autocompletion,closeBrackets } from '@codemirror/autocomplete';
 import { foldKeymap,syntaxTree } from '@codemirror/language';
 
 
 //here are some more imports for melicinious items 
 import { Router } from '@angular/router';
+
 
 // [[Note]] or [[Note|alias]]
 const WIKILINK = /\[\[([^\[\]\n|]+)(?:\|([^\[\]\n]+))?\]\]/g;
@@ -162,6 +163,7 @@ function inCode(state:EditorState,pos:number):boolean{
   }
   return false;
 }
+//this function si to build the wikilinks 
 function buildWikiLinks(view:EditorView):DecorationSet{
   const {state} = view;
   const builder = new RangeSetBuilder<Decoration>();
@@ -169,7 +171,7 @@ function buildWikiLinks(view:EditorView):DecorationSet{
   for(const {from,to} of view.visibleRanges){
     const text = state.doc.sliceString(from,to);
     WIKILINK.lastIndex = 0;
-    let m: RegExpIndicesArray | null;
+    let m: RegExpExecArray | null;
 
     while((m = WIKILINK.exec(text))){
       const start = from + m.index;
@@ -181,7 +183,7 @@ function buildWikiLinks(view:EditorView):DecorationSet{
 
       if(state.selection.ranges.some(r => r.from <= end && r.to >= start)) continue;
 
-      const target = m[1].trim();
+      const target = (m[1] ?? '').trim();
       //this is to skip | if inptutted
       const labelStart = m[2] ? start + 2 + m[1]?.length + 1: start + 2;
       const labelEnd = end -2;
@@ -198,6 +200,8 @@ function buildWikiLinks(view:EditorView):DecorationSet{
   }
   return builder.finish();
 }
+//this is ot alows hte wikilinks to gain targets and dress 
+//them appropirately
 export const wikiLinks = (onOpen:(target:string)=> void) => [
   ViewPlugin.fromClass(
     class{
@@ -232,10 +236,22 @@ export const wikiLinks = (onOpen:(target:string)=> void) => [
   }),
 ];
 
+const wikiCompletion = (getNotes:() => string[]) =>(ctx:CompletionContext) =>{
+  const m = ctx.matchBefore(/\[\[[^\]\n]*/);
+  if(!m) return null;
+    return{
+      from : m.from + 2,
+      options: getNotes().map(label => ({label,type:'text'})),
+      validFor:/^[^\]\n]*$/,
+    };
+  };
+
+
+
 @Component({
   selector: 'app-generator',
   standalone:true,
-  imports:[Router],
+  imports:[],
   templateUrl: './note-component.html',
   styleUrl: './note-component.css',
 })
@@ -246,10 +262,11 @@ export class Generator implements AfterViewInit, OnDestroy{
   private ydoc = new Y.Doc();
   private provider?:WebsocketProvider;
   private view?:EditorView;
+  noteTitles: string[] = [];
 
 
   //constructor creating a zone. 
-  constructor(private zone:NgZone){}
+  constructor(private zone:NgZone, private router:Router){}
 
 
   //this is to keep the cdmr6 and yjs out of the change detection
@@ -295,8 +312,10 @@ export class Generator implements AfterViewInit, OnDestroy{
           bracketMatching(),  
           EditorView.lineWrapping,
           placeholder('start new note...'),
+          //this import is for the wikilinks
           wikiLinks(target => this.zone.run(() => this.router.navigate(['/note', target]))),
-
+          closeBrackets(),
+          autocompletion({override:[wikiCompletion(()=>this.noteTitles)]}),
 
           //this section replaceds javascript
           markdown({base: markdownLanguage}),

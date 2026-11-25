@@ -1,10 +1,10 @@
  export interface NoteModel{
-   NoteId:string;
-   Title:string;
+   id:string;
+   title:string;
    FolderId?:number;
    UpdatedAt?:Date;
    IsDeleted?:boolean;
-
+  content:string;
  }
 
  

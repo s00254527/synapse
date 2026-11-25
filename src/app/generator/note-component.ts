@@ -316,7 +316,7 @@ export class Generator implements AfterViewInit, OnDestroy{
 
       //these are for the console logs, to see if the server is running. 
       //the server being i.e. the provider. 
-      this.provider.on('status', (e: { status: string }) => {
+      this.provider.on('status', (e: { status:string }) => {
         console.log('WS status:', e.status);
       });
 
@@ -342,7 +342,12 @@ export class Generator implements AfterViewInit, OnDestroy{
           bracketMatching(),  
           EditorView.lineWrapping,
           placeholder('start new note...'),
-          //this import is for the wikilinks
+          //this import is for the wikilinks, its not working
+          /** 
+           * this could be a case that its improperly incerted, or that I dont have a set route, 
+           * This could be a problem with the zoning and trying to go outside of angualr, 
+           * this is to be fixed 
+          */
           wikiLinks(target => this.zone.run(() => this.router.navigate(['/note', target]))),
           closeBrackets(),
           autocompletion({override:[wikiCompletion(()=>this.noteTitles)]}),

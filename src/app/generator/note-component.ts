@@ -20,8 +20,14 @@ import {autocompletion,closeBrackets } from '@codemirror/autocomplete';
 import { foldKeymap,syntaxTree } from '@codemirror/language';
 
 
+//here are some more imports for melicinious items 
+import { Router } from '@angular/router';
 
-//now i have to define the styling.
+// [[Note]] or [[Note|alias]]
+const WIKILINK = /\[\[([^\[\]\n|]+)(?:\|([^\[\]\n]+))?\]\]/g;
+const hide = Decoration.replace({})
+
+//now i have to define the styling. so that this can edit certian stages of syntax
 const markDownStyle = HighlightStyle.define([
   { tag: t.heading1, fontSize: '2em',   fontWeight: 'bold' },
   { tag: t.heading2, fontSize: '1.6em', fontWeight: 'bold' },
@@ -149,11 +155,87 @@ export const livePreview = ViewPlugin.fromClass(
   {decorations:(Plugin) => Plugin.decorations},
 );
 
+//this class is to determine the code and treating it as a link
+function inCode(state:EditorState,pos:number):boolean{
+  for(let n:any = syntaxTree(state).resolveInner(pos,1);n; n =n.parent){
+    if(n.name === 'InlineCode' || n.name === 'FencedCode' || n.name === 'CodeBlock') return true;
+  }
+  return false;
+}
+function buildWikiLinks(view:EditorView):DecorationSet{
+  const {state} = view;
+  const builder = new RangeSetBuilder<Decoration>();
 
+  for(const {from,to} of view.visibleRanges){
+    const text = state.doc.sliceString(from,to);
+    WIKILINK.lastIndex = 0;
+    let m: RegExpIndicesArray | null;
+
+    while((m = WIKILINK.exec(text))){
+      const start = from + m.index;
+      const end = start + m[0]?.length;
+
+      if(inCode(state,start)) continue;
+
+      //coursor is touching the link, leaving it raw so it can be changed
+
+      if(state.selection.ranges.some(r => r.from <= end && r.to >= start)) continue;
+
+      const target = m[1].trim();
+      //this is to skip | if inptutted
+      const labelStart = m[2] ? start + 2 + m[1]?.length + 1: start + 2;
+      const labelEnd = end -2;
+
+      //this hides the "[[ and | if ailised"
+      builder.add(start,labelStart,hide);
+      builder.add(labelStart,labelEnd,Decoration.mark({
+         class:'cm-wikilink',
+         attribute :{'data-target':target},
+      }));
+     builder.add(labelEnd,end,hide); // this hides the "]]"
+      
+    }
+  }
+  return builder.finish();
+}
+export const wikiLinks = (onOpen:(target:string)=> void) => [
+  ViewPlugin.fromClass(
+    class{
+      decorations:DecorationSet;
+      constructor(view:EditorView){this.decorations = buildWikiLinks(view)};
+      update(u:ViewUpdate){
+        if(u.docChanged || u.selectionSet || u.viewportChanged){
+          this.decorations = buildWikiLinks(u.view);
+        }
+      }
+    },
+    {decorations: p => p.decorations},
+  ),
+  EditorView.domEventHandlers({
+    mousedown(event){
+      const el = (event.target as HTMLElement).closest('.cm-wikilink') as HTMLElement| null;
+      //CTRL/CMD + Click opens. PLain texxt just placed the courser so it can be edited
+      if(el  && (event.ctrlKey || event.metaKey)){
+        event.preventDefault();
+        event.preventDefault();
+        onOpen(el.dataset['target']!);
+        return true;
+      }
+      return false;
+    },
+  }),
+  //base theme not generator.css because codemorriors dom is created outside
+  //angualrs template so component scoped css wont reach it, hence this styling 
+
+  EditorView.baseTheme({
+    '.cm-wikilink': { color: '#7c3aed', textDecoration: 'underline', cursor: 'pointer' },
+  }),
+];
 
 @Component({
   selector: 'app-generator',
   standalone:true,
+  imports:[Router],
   templateUrl: './note-component.html',
   styleUrl: './note-component.css',
 })
@@ -179,6 +261,7 @@ export class Generator implements AfterViewInit, OnDestroy{
       this.provider = new WebsocketProvider('ws://localhost:1234', 'my-room', this.ydoc);
       const ytext = this.ydoc.getText('codemirror');
 
+      //this is jus to create a random user, 
       this.provider.awareness.setLocalStateField('user',{
         name:'User' + Math.floor(Math.random()*100),
          color: '#30bced',
@@ -212,9 +295,8 @@ export class Generator implements AfterViewInit, OnDestroy{
           bracketMatching(),  
           EditorView.lineWrapping,
           placeholder('start new note...'),
+          wikiLinks(target => this.zone.run(() => this.router.navigate(['/note', target]))),
 
-          //Other code mirror features to go here.... 
-          
 
           //this section replaceds javascript
           markdown({base: markdownLanguage}),

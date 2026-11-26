@@ -3,12 +3,13 @@ import { firstValueFrom } from 'rxjs';
 import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
 import { NoteApiService } from '../api/note-api.service';
+import { environment } from '../../../environments/environment';
 //the note model as a 'note meta' makes sense in my mind 
 import { NoteModel as NoteMeta } from '../../model/noteModel';
 
 //will add this to an env for security reason just to keep it 
 //here for the time being 
-export const WS_URL = 'ws://localhost:1234';
+export const WS_URL = environment.wsUrl;
 
 
 @Injectable({
@@ -64,7 +65,7 @@ export class NoteServiceService {
     if (found) return found.id;
 
     const created = await firstValueFrom(this.api.create(title.trim())) as NoteMeta;
-    this.notes.set(created.id, { id: created.id, title: created.title,content:created.id });
+    this.notes.set(created.id, { id: created.id, title: created.title, content: created.content });
     return created.id;
   }
 //setting links inside of the notes, with its own id and target notes

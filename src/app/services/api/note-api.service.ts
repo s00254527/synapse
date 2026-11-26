@@ -1,23 +1,42 @@
-import { Injectable,inject } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { NoteModel as ApiNote } from '../../model/noteModel';
-@Injectable({
-  providedIn: 'root'
-})
+import { map } from 'rxjs';
+import { environment } from '../../../environments/environment';
+import { NoteModel } from '../../model/noteModel';
+
+interface ApiNote {
+  noteId: number;
+  vaultId: number;
+  folderId?: number | null;
+  title: string;
+  content?: string | null;
+  isDeleted?: boolean | null;
+}
+
+const toModel = (n: ApiNote): NoteModel => ({
+  id: String(n.noteId),
+  title: n.title,
+  content: n.content ?? '',
+  FolderId: n.folderId ?? undefined,
+  IsDeleted: n.isDeleted ?? undefined,
+});
+
+@Injectable({ providedIn: 'root' })
 export class NoteApiService {
   private http = inject(HttpClient);
-  private base = '/api/notes'; // <- change to your API
-  //getting the id of the doc that we pull into a new route.
+  private base = `${environment.apiUrl}/api/notes`;
+
   get(id: string) {
-    return this.http.get<ApiNote>(`${this.base}/${id}`);
-    // if your API returns NoteModel: .pipe(map(n => ({ id: n.id, title: n.Title, content: n.Contenet })))
+    return this.http.get<ApiNote>(`${this.base}/${id}`).pipe(map(toModel));
   }
-//saving the text doc - codemirrior for the applicaiton
-  save(id: string, content: string) {
-    return this.http.put<void>(`${this.base}/${id}`, { content });
+
+  save(id: string, title: string, content: string) {
+    return this.http.put<void>(`${this.base}/${id}`, { title, content });
   }
-  //creating a new note 
+
   create(title: string) {
-    return this.http.post<ApiNote>(this.base, { title, content: '' });
-}
+    return this.http
+      .post<ApiNote>(this.base, { title, content: '', vaultId: environment.defaultVaultId })
+      .pipe(map(toModel));
+  }
 }

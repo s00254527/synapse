@@ -95,6 +95,7 @@ private mount(id:string){
 //using codemirror in Ytext for realtime .md like code 
     const ytext = ydoc.getText('codemirror');
     const meta = ydoc.getMap('meta');
+    let title = '';
 //creating a new userfield -- david has a version of this where it asks your name 
 //then it binds that to the user. 
     provider.awareness.setLocalStateField('user',{
@@ -113,6 +114,7 @@ private mount(id:string){
       provider.off('sync',onSync);
       try{
         const note = await note$;
+        title = note.title;
         //if this document isint a y doc then return
         if(this.ydoc !== ydoc) return;
         //else await this notes indexed by id, title and contnetn 
@@ -133,10 +135,11 @@ private mount(id:string){
 //save to the api + publish the links debounced etc 
    // ---- save to API + publish [[links]] (debounced) ----
    //this is the failures of the save, otherwise saving 
-      const save = debounce(
-        () => this.api.save(id, ytext.toString()).subscribe({ error: e => console.error('Save failed', e) }),
-        1500,
-      );
+    const save = debounce(() => {
+      if (!title) return;
+      this.api.save(id, title, ytext.toString())
+        .subscribe({ error: e => console.error('Save failed', e) });
+    }, 1500);
 //this is publishing the links, extracting the text and pushing it to the ytext
       const publishLinks = debounce(
         () => this.notes.setLinks(id, extractLinks(ytext.toString())),

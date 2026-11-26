@@ -6,5 +6,5 @@ import { NoteComponentComponent } from './components/note-component/note-compone
 //up to the user to start writing  -- to be changed.
 export const routes: Routes = [
     {path:'note/:id',component:NoteComponentComponent},
-    {path:'',redirectTo:'note/home',pathMatch:'full'}
+    {path:'', redirectTo:'note/1',pathMatch: 'full'}
 ];

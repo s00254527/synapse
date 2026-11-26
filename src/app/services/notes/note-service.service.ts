@@ -3,8 +3,11 @@ import { firstValueFrom } from 'rxjs';
 import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
 import { NoteApiService } from '../api/note-api.service';
+//the note model as a 'note meta' makes sense in my mind 
 import { NoteModel as NoteMeta } from '../../model/noteModel';
 
+//will add this to an env for security reason just to keep it 
+//here for the time being 
 export const WS_URL = 'ws://localhost:1234';
 
 
@@ -12,11 +15,14 @@ export const WS_URL = 'ws://localhost:1234';
   providedIn: 'root'
 })
 export class NoteServiceService {
- private ydoc = new Y.Doc();
+  //importing ydoc and the websocket provider from yjs
+  //to be able to load the notes
+  private ydoc = new Y.Doc();
   private provider = new WebsocketProvider(WS_URL, 'workspace-index', this.ydoc);
   private notes = this.ydoc.getMap<NoteMeta>('notes');
   private linkMap = this.ydoc.getMap<string[]>('links');
 
+  //creating a list of notelinks
   readonly list = signal<NoteMeta[]>([]);
   readonly links = signal<Record<string, string[]>>({});
 
@@ -29,16 +35,16 @@ export class NoteServiceService {
     };
     this.provider.on('sync', onSync);
   });
-
+// the constructor to get the values and try to stop duplicates
   constructor(private api: NoteApiService) {
     this.notes.observe(() => this.list.set([...this.notes.values()]));
     this.linkMap.observe(() => this.links.set(this.linkMap.toJSON()));
   }
-
+//getting the title of the note 
   titles(): string[] {
     return this.list().map(n => n.title);
   }
-
+//search function 
   findByTitle(title: string): NoteMeta | undefined {
     const t = title.trim().toLowerCase();
     return this.list().find(n => n.title.toLowerCase() === t);
@@ -61,7 +67,7 @@ export class NoteServiceService {
     this.notes.set(created.id, { id: created.id, title: created.title,content:created.id });
     return created.id;
   }
-
+//setting links inside of the notes, with its own id and target notes
   setLinks(id: string, targets: string[]) {
     const prev = this.linkMap.get(id);
     if (prev && prev.length === targets.length && prev.every((t, i) => t === targets[i])) return;
